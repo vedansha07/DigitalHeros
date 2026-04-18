@@ -60,23 +60,8 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Subscription check — but only block pages, not API routes
-    // Also skip /dashboard itself so the page can show a proper CTA
-    if (isDashboard && pathname !== '/dashboard') {
-      try {
-        const { data: dbUser } = await supabase
-          .from('users')
-          .select('subscription_status')
-          .eq('id', user.id)
-          .single()
-
-        if (dbUser && dbUser.subscription_status !== 'active') {
-          return NextResponse.redirect(new URL('/subscribe', request.url))
-        }
-      } catch {
-        // DB unreachable — let the page handle its own error state
-      }
-    }
+    // Note: subscription check is handled at the page level, not middleware
+    // This lets the dashboard show a subscribe CTA for inactive users
   }
 
   // ── Redirect already-logged-in users away from auth pages ──

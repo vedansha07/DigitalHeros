@@ -1,7 +1,6 @@
 import { requireAuth } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/server';
 import DashboardOverviewClient from '@/components/dashboard/DashboardOverviewClient';
-import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,11 +8,7 @@ export default async function DashboardMainPage() {
     const { dbUser } = await requireAuth();
     const supabase = createClient();
 
-    // If subscription not active, send to subscribe page
-    if (dbUser.subscription_status !== 'active') {
-        redirect('/subscribe');
-    }
-
+    // Fetch data in parallel — all queries safe even if empty
     const [scoresRes, drawRes, winningsRes] = await Promise.all([
         supabase.from('golf_scores')
             .select('*')
@@ -24,7 +19,7 @@ export default async function DashboardMainPage() {
             .eq('status', 'pending')
             .order('created_at', { ascending: false })
             .limit(1)
-            .single(),
+            .maybeSingle(),
         supabase.from('draw_results')
             .select('*, draws(draw_month)')
             .eq('user_id', dbUser.id)
