@@ -86,12 +86,17 @@ const config: Config = {
           from: { transform: "translateX(-100%)", opacity: "0" },
           to:   { transform: "translateX(0)",    opacity: "1" },
         },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to:   { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "fade-up":       "fade-up 0.5s ease forwards",
         "fade-in":       "fade-in 0.3s ease forwards",
         "pulse-glow":    "pulse_glow 2s ease-in-out infinite",
         "slide-in-left": "slide-in-left 0.3s ease forwards",
+        "marquee":       "marquee 24s linear infinite",
       },
     },
   },

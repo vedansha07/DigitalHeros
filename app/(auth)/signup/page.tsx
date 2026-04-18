@@ -30,7 +30,10 @@ export default function SignupPage() {
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (authError) {
@@ -39,7 +42,19 @@ export default function SignupPage() {
       return;
     }
 
-    toast.success("Account created! Redirecting to plans...");
+    // Immediately sign in — this works even if email confirmation is enabled
+    // because Supabase still creates the session on signUp in many configs.
+    // If email confirmation fires, the callback route handles the rest.
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (loginError) {
+      // Account created but email confirmation is required
+      toast.success("Account created! Check your email to confirm, then log in.");
+      router.push("/login");
+      return;
+    }
+
+    toast.success("Welcome to Digital Heros!");
     router.push("/subscribe");
     router.refresh();
   };
