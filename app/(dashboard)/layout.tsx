@@ -5,13 +5,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   await requireAuth();
 
   return (
-    <div className="min-h-screen bg-surface-subtle flex font-sans">
+    <div className="min-h-screen bg-cream flex font-sans">
       <Sidebar isAdmin={false} />
-      {/* Push content right of the desktop sidebar */}
       <main className="flex-1 md:ml-64 min-h-screen overflow-x-hidden">
         {/* Mobile topbar spacer */}
         <div className="h-14 md:hidden" />
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+        <div className="max-w-[1200px] mx-auto px-6 sm:px-8 lg:px-12 py-10 md:py-12">
           {children}
         </div>
       </main>

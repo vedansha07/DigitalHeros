@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -18,102 +18,69 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
     if (authError) {
-      setError("Invalid email or password. Please try again.");
+      setError("Invalid email or password.");
       setLoading(false);
       return;
     }
-
     toast.success("Welcome back!");
     router.push("/dashboard");
     router.refresh();
   };
 
+  const inputCls = "w-full h-12 px-4 border border-cream-border bg-cream text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-violet focus:ring-1 focus:ring-violet transition font-medium";
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-primary tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted mt-1.5">Sign in to your Digital Heros account.</p>
+      {/* Header */}
+      <div className="mb-8 pb-8 border-b border-cream-border">
+        <p className="text-2xs font-black uppercase tracking-[0.3em] text-ink-faint mb-2">Account Access</p>
+        <h1 className="text-3xl font-black text-ink tracking-tight">Welcome back.</h1>
+        <p className="text-sm text-ink-muted mt-1.5">Sign in to your Digital Heros account.</p>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-5">
         {error && (
-          <div className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100 flex items-start gap-2.5 font-medium">
-            <span className="text-red-500 mt-0.5">⚠</span> {error}
+          <div className="bg-coral/8 text-coral text-sm p-4 border border-coral/20 font-semibold flex items-start gap-2">
+            <span className="mt-0.5">⚠</span> {error}
           </div>
         )}
 
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm font-semibold text-primary">
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-11 px-4 rounded-xl border border-surface-border bg-surface text-sm text-primary placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition"
-            placeholder="you@example.com"
-          />
+        <div>
+          <label htmlFor="email" className="block text-xs font-black uppercase tracking-[0.2em] text-ink-muted mb-2">Email Address</label>
+          <input id="email" type="email" required autoComplete="email" value={email}
+            onChange={e => setEmail(e.target.value)} className={inputCls} placeholder="you@example.com" />
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-semibold text-primary">
-              Password
-            </label>
-            <Link href="/forgot-password" className="text-xs text-accent hover:text-accent/80 font-semibold transition">
-              Forgot password?
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="password" className="text-xs font-black uppercase tracking-[0.2em] text-ink-muted">Password</label>
+            <Link href="/forgot-password" className="text-2xs font-bold text-violet hover:text-coral transition-colors uppercase tracking-widest">
+              Forgot?
             </Link>
           </div>
           <div className="relative">
-            <input
-              id="password"
-              type={showPw ? "text" : "password"}
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-11 px-4 pr-11 rounded-xl border border-surface-border bg-surface text-sm text-primary placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition"
-              placeholder="••••••••"
-            />
-            <button
-              type="button"
-              aria-label={showPw ? "Hide password" : "Show password"}
-              onClick={() => setShowPw(!showPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-light hover:text-muted transition p-1"
-            >
-              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            <input id="password" type={showPw ? "text" : "password"} required autoComplete="current-password"
+              value={password} onChange={e => setPassword(e.target.value)}
+              className={`${inputCls} pr-12`} placeholder="••••••••" />
+            <button type="button" aria-label={showPw ? "Hide" : "Show"} onClick={() => setShowPw(!showPw)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink transition p-1.5">
+              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full h-11 bg-primary hover:bg-primary-light text-white font-bold text-sm rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 mt-2 hover:shadow-card-md"
-        >
-          {loading ? (
-            <>
-              <Loader2 size={16} className="animate-spin" /> Signing in...
-            </>
-          ) : (
-            "Sign In"
-          )}
+        <button type="submit" disabled={loading}
+          className="w-full h-12 bg-ink hover:bg-violet text-cream font-black text-xs uppercase tracking-[0.2em] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-2">
+          {loading ? <><Loader2 size={14} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowUpRight size={14} /></>}
         </button>
       </form>
 
-      <p className="text-center text-sm text-muted mt-6">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="text-accent font-semibold hover:text-accent/80 transition">
-          Create account
-        </Link>
+      <p className="text-center text-sm text-ink-muted mt-8 pt-8 border-t border-cream-border">
+        No account?{" "}
+        <Link href="/signup" className="text-violet font-bold hover:text-coral transition-colors">Create one</Link>
       </p>
     </div>
   );

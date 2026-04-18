@@ -5,27 +5,27 @@ import { useState } from "react";
 import {
   LayoutDashboard, Award, Target, Settings,
   LogOut, Menu, X, HeartHandshake, Users,
-  PieChart, Coins, ChevronRight,
+  PieChart, Coins, ArrowUpRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 const userLinks = [
-  { name: "Overview",     href: "/dashboard",                icon: LayoutDashboard },
-  { name: "Scores",       href: "/dashboard/scores",         icon: Target },
-  { name: "Winnings",     href: "/dashboard/winnings",       icon: Award },
-  { name: "Charity",      href: "/dashboard/charity",        icon: HeartHandshake },
-  { name: "Membership",   href: "/dashboard/subscription",   icon: Settings },
+  { name: "Overview",   href: "/dashboard",              icon: LayoutDashboard },
+  { name: "Scores",     href: "/dashboard/scores",       icon: Target },
+  { name: "Winnings",   href: "/dashboard/winnings",     icon: Award },
+  { name: "Charity",    href: "/dashboard/charity",      icon: HeartHandshake },
+  { name: "Membership", href: "/dashboard/subscription", icon: Settings },
 ];
 
 const adminLinks = [
-  { name: "Overview",     href: "/admin",                    icon: LayoutDashboard },
-  { name: "Users",        href: "/admin/users",              icon: Users },
-  { name: "Draw Engine",  href: "/admin/draws",              icon: Target },
-  { name: "Winners",      href: "/admin/winners",            icon: Coins },
-  { name: "Charities",    href: "/admin/charities",          icon: HeartHandshake },
-  { name: "Analytics",    href: "/admin/reports",            icon: PieChart },
+  { name: "Overview",    href: "/admin",           icon: LayoutDashboard },
+  { name: "Users",       href: "/admin/users",     icon: Users },
+  { name: "Draw Engine", href: "/admin/draws",     icon: Target },
+  { name: "Winners",     href: "/admin/winners",   icon: Coins },
+  { name: "Charities",   href: "/admin/charities", icon: HeartHandshake },
+  { name: "Analytics",   href: "/admin/reports",   icon: PieChart },
 ];
 
 export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -41,64 +41,63 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   };
 
   const isActive = (href: string) =>
-    pathname === href ||
-    (href !== "/dashboard" && href !== "/admin" && pathname.startsWith(href));
+    pathname === href || (href !== "/dashboard" && href !== "/admin" && pathname.startsWith(href));
 
   const NavContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-onyx border-r border-onyx-border">
       {/* Logo */}
-      <div className="px-6 py-6 border-b border-white/8 shrink-0">
+      <div className="px-6 py-6 border-b border-onyx-border shrink-0">
         <Link href={isAdmin ? "/admin" : "/dashboard"} className="block">
-          <span className="font-black text-2xl tracking-tighter text-white">
-            DIGITAL<span className="text-accent">HEROS</span>
+          <span className="font-black text-xl tracking-tighter text-cream">
+            digital<span className="text-lime">heros</span>
           </span>
         </Link>
         {isAdmin && (
-          <span className="mt-2 inline-flex items-center gap-1.5 bg-accent/15 text-accent text-2xs font-black uppercase tracking-widest px-2.5 py-1 rounded-md border border-accent/25">
+          <span className="mt-2.5 inline-flex items-center gap-1.5 bg-violet/15 text-violet-light text-2xs font-black uppercase tracking-widest px-2.5 py-1 border border-violet/25">
             Admin Console
           </span>
         )}
       </div>
 
-      {/* Links */}
-      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto scrollbar-hide">
+      {/* Section label */}
+      <div className="px-6 pt-5 pb-2">
+        <p className="text-2xs font-black uppercase tracking-[0.3em] text-onyx-muted">
+          {isAdmin ? "Management" : "Navigation"}
+        </p>
+      </div>
+
+      {/* Nav links */}
+      <nav className="flex-1 px-3 overflow-y-auto scrollbar-hide divide-y divide-onyx-border border-t border-onyx-border">
         {links.map((link) => {
           const Icon = link.icon;
           const active = isActive(link.href);
           return (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={() => setIsOpen(false)}
-              className={`group flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all relative overflow-hidden ${
+            <Link key={link.name} href={link.href} onClick={() => setIsOpen(false)}
+              className={`flex items-center justify-between px-4 py-4 text-xs font-black uppercase tracking-[0.18em] transition-colors group ${
                 active
-                  ? "bg-accent text-primary shadow-glow-sm"
-                  : "text-white/60 hover:text-white hover:bg-white/6"
+                  ? "bg-lime text-ink"
+                  : "text-onyx-muted hover:text-cream hover:bg-onyx-card"
               }`}
             >
-              {active && (
-                <span className="absolute inset-0 bg-accent opacity-10 rounded-xl" />
-              )}
-              <Icon
-                size={18}
-                strokeWidth={active ? 2.5 : 2}
-                className={`shrink-0 transition-transform group-hover:scale-110 ${active ? "text-primary" : "text-white/40 group-hover:text-white/70"}`}
-              />
-              <span className="relative">{link.name}</span>
-              {active && <ChevronRight size={14} className="ml-auto text-primary/60" />}
+              <div className="flex items-center gap-3">
+                <Icon size={15} strokeWidth={2.5} className={`shrink-0 ${active ? "text-ink" : "text-onyx-muted group-hover:text-cream"}`} />
+                {link.name}
+              </div>
+              <ArrowUpRight size={12} className={`${active ? "text-ink/60" : "text-onyx-border group-hover:text-onyx-muted"}`} />
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-white/8 shrink-0">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-white/50 hover:text-red-400 hover:bg-red-500/8 transition-all group"
-        >
-          <LogOut size={18} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
-          Sign Out
+      {/* Sign out */}
+      <div className="border-t border-onyx-border shrink-0">
+        <button onClick={handleLogout}
+          className="flex w-full items-center justify-between px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-onyx-muted hover:text-coral hover:bg-coral/5 transition-colors group">
+          <div className="flex items-center gap-3">
+            <LogOut size={15} strokeWidth={2.5} />
+            Sign Out
+          </div>
+          <ArrowUpRight size={12} className="text-onyx-border group-hover:text-coral" />
         </button>
       </div>
     </div>
@@ -106,54 +105,39 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
 
   return (
     <>
-      {/* === MOBILE TOPBAR === */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-primary border-b border-white/10 flex items-center justify-between px-4 z-50 shadow-lg">
-        <Link href={isAdmin ? "/admin" : "/dashboard"} className="font-black text-xl tracking-tighter text-white">
-          DIGITAL<span className="text-accent">HEROS</span>
+      {/* MOBILE TOPBAR */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-onyx border-b border-onyx-border flex items-center justify-between px-5 z-50">
+        <Link href={isAdmin ? "/admin" : "/dashboard"} className="font-black text-lg tracking-tighter text-cream">
+          digital<span className="text-lime">heros</span>
         </Link>
-        <button
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isOpen}
+        <button aria-label={isOpen ? "Close menu" : "Open menu"} aria-expanded={isOpen}
           onClick={() => setIsOpen(!isOpen)}
-          className="text-white p-2 rounded-lg hover:bg-white/10 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
-        >
+          className="text-onyx-muted hover:text-cream p-2 border border-onyx-border hover:border-onyx-muted transition min-h-[44px] min-w-[44px] flex items-center justify-center">
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={isOpen ? "x" : "menu"}
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              {isOpen ? <X size={22} /> : <Menu size={22} />}
+            <motion.div key={isOpen ? "x" : "menu"}
+              initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.12 }}>
+              {isOpen ? <X size={20} /> : <Menu size={20} />}
             </motion.div>
           </AnimatePresence>
         </button>
       </div>
 
-      {/* === DESKTOP SIDEBAR === */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col bg-primary z-40 shadow-xl">
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col z-40">
         <NavContent />
       </aside>
 
-      {/* === MOBILE DRAWER === */}
+      {/* MOBILE DRAWER */}
       <AnimatePresence>
         {isOpen && (
           <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-ink/50 z-40 md:hidden" onClick={() => setIsOpen(false)} />
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
-              onClick={() => setIsOpen(false)}
-            />
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 400, damping: 40 }}
-              className="fixed inset-y-0 left-0 w-72 bg-primary z-50 md:hidden shadow-2xl"
-            >
+              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 380, damping: 38 }}
+              className="fixed inset-y-0 left-0 w-72 z-50 md:hidden">
               <NavContent />
             </motion.div>
           </>

@@ -2,44 +2,51 @@ import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-primary flex bg-dot relative overflow-hidden">
-      {/* Ambient glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-accent/8 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-accent/5 blur-[100px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-cream flex bg-dot">
 
-      {/* Left panel — branding */}
-      <div className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-12 relative z-10 border-r border-white/6">
-        <Link href="/" className="font-black text-2xl text-white tracking-tighter">
-          DIGITAL<span className="text-accent">HEROS</span>
+      {/* Left panel — editorial branding column */}
+      <div className="hidden lg:flex flex-col justify-between w-[440px] shrink-0 bg-onyx border-r border-onyx-border p-12">
+        <Link href="/" className="font-black text-2xl tracking-tighter text-cream">
+          digital<span className="text-lime">heros</span>
         </Link>
 
-        <div className="space-y-8">
-          {[
-            { stat: "£0", label: "Paid out to winners" },
-            { stat: "3 tiers", label: "Prize distribution levels" },
-            { stat: "10–100%", label: "Charity contribution range" },
-          ].map((item) => (
-            <div key={item.label} className="border-l-2 border-accent/40 pl-5">
-              <p className="text-3xl font-black text-white font-mono">{item.stat}</p>
-              <p className="text-sm text-white/50 font-medium mt-1">{item.label}</p>
-            </div>
-          ))}
+        {/* Big editorial headline */}
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-onyx-muted mb-6">The Platform</p>
+          <h2 className="text-5xl font-black text-cream leading-tight mb-10">
+            Golf.<br />
+            <span className="text-lime">Charity.</span><br />
+            Prizes.
+          </h2>
+
+          {/* Stats */}
+          <div className="space-y-0 border-t border-onyx-border">
+            {[
+              { stat: "3 tiers", label: "Prize distribution levels" },
+              { stat: "10–100%", label: "Charity contribution range" },
+              { stat: "Monthly", label: "Automated draw cycle" },
+            ].map((item) => (
+              <div key={item.label} className="py-5 border-b border-onyx-border flex items-center justify-between gap-4">
+                <p className="text-2xl font-black text-cream font-mono">{item.stat}</p>
+                <p className="text-xs text-onyx-muted font-medium text-right">{item.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <p className="text-white/30 text-xs font-medium">
-          © {new Date().getFullYear()} Digital Heros. All rights reserved.
-        </p>
+        <p className="text-xs text-onyx-muted">© {new Date().getFullYear()} Digital Heros. All rights reserved.</p>
       </div>
 
-      {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-5 relative z-10">
-        <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <Link href="/" className="lg:hidden font-black text-xl text-white tracking-tighter block mb-8">
-            DIGITAL<span className="text-accent">HEROS</span>
-          </Link>
+      {/* Right panel — form area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12">
+        {/* Mobile logo */}
+        <Link href="/" className="lg:hidden font-black text-xl tracking-tighter text-ink block mb-10">
+          digital<span className="text-violet">heros</span>
+        </Link>
 
-          <div className="bg-surface rounded-2xl shadow-card-lg border border-surface-border/60 p-8">
+        <div className="w-full max-w-md">
+          {/* Form card — editorial flat style */}
+          <div className="bg-cream border border-cream-border shadow-card-lg p-8 md:p-10">
             {children}
           </div>
         </div>
