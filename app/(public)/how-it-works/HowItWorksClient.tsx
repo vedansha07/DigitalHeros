@@ -1,133 +1,222 @@
-"use client"
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
-import { ChevronDown, Database, Cpu, HeartPulse, CreditCard } from 'lucide-react';
-import Link from 'next/link';
+"use client";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { ChevronDown, Database, Cpu, HeartHandshake, CreditCard, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+import PublicNavbar from "@/components/layout/PublicNavbar";
 
 const FAQs = [
-    { q: "Is this a lottery or a gambling application?", a: "No. Digital Heros utilizes a deterministic logic matrix. Users generate entry parameters through verified physical effort (submitting golf Stableford scores). Payouts are fractional distributions of a pre-determined communal subscription pool based on output correlation, completely removing probabilistic gambling loops." },
-    { q: "How do I ensure my node is eligible for the upcoming cycle?", a: "Two parameters: 1) Maintain an 'Active' stripe subscription status at the time of programmatic execution. 2) Log exactly FIVE (5) 1-45 Stableford score entries through the Platform Dashboard before the chronological deadline." },
-    { q: "What happens if I log 6 scores?", a: "Our database natively handles overflow pruning. Appending a 6th score automatically fires an internal trigger dropping your oldest logged score, ensuring your rolling matrix is always exactly 5 data points." },
-    { q: "Where exactly does the charity fractional allocation go?", a: "10% to 100% of your net subscription input is instantly dedicated to a specific charity entity. You execute manual control over your preferred percentage split and the target recipient inside the Membership Dashboard. If you lapse on configuration, capital defaults to the currently Featured Master Charity." },
-    { q: "Who authorizes the algorithmic draws?", a: "All draws are processed centrally via Next.js Serverless Execution Environments. System Administrators initialize chronological sweeps. The logic randomly queries 1-45 numbers (Random Logic) or clusters outliers (Algorithmic Logic). Data is immutable once published." },
-    { q: "How is the rollover logic mathematically calculated?", a: "If zero users match the Tier 1 parameters (5 exact hits), that 40% sum physically rolls into the next month's Tier 1 allocation. Tiers 2 and 3 inherently distribute to whoever validates, but Tier 1 serves as an isolated progressive channel." },
-    { q: "How do I physically acquire my capital if I successfully validate?", a: "Verification is natively handled inside the Dashboard. If a cycle indicates validation, you upload physical proof (a scorecard photograph or digital receipt supporting the Stableford parameter). Admins review, approve, and execute manual Stripe transit functions to disburse capital safely." },
-    { q: "Can I terminate my physical footprint in the platform?", a: "Yes. Membership termination stops ongoing subscriptions immediately. You maintain your database node access until the final billed cycle concludes. After that, your data points are blocked from subsequent logic parses." }
+  { q: "Is this a lottery or gambling?", a: "No. Digital Heros uses deterministic logic. Users generate entry parameters through verified physical effort (submitting golf Stableford scores). Payouts are fractional distributions of a pre-determined subscription pool based on score correlation — no probabilistic gambling loops." },
+  { q: "How do I qualify for the draw?", a: "Two conditions: 1) Maintain an active Stripe subscription at the time of the draw. 2) Log exactly five (5) Stableford score entries between 1–45 through your Dashboard before the monthly deadline." },
+  { q: "What happens if I log more than 5 scores?", a: "A database trigger handles overflow automatically. Adding a 6th score drops your oldest entry, keeping your rolling set at exactly 5 data points — always." },
+  { q: "Where does the charity contribution go?", a: "Between 10% and 100% of your net subscription amount is dedicated to your chosen charity. You control the percentage and recipient inside your Dashboard. If unconfigured, it defaults to the Featured Charity." },
+  { q: "Who runs the monthly draws?", a: "All draws are processed via Next.js serverless functions. Administrators initialise monthly sweeps. The algorithm either draws randomly or clusters by frequency. Data is immutable once published." },
+  { q: "How does rollover work?", a: "If no user matches all 5 numbers (Tier 1), the 40% allocation rolls into the next month's Tier 1 pot as a progressive jackpot. Tiers 2 and 3 distribute to whoever qualifies each month." },
+  { q: "How do I claim my prize?", a: "Winners are notified via the Dashboard. Upload a certified scorecard photograph as proof. Admins review and approve, then issue payment directly via Stripe." },
+  { q: "Can I cancel my membership?", a: "Yes. Cancellation stops billing immediately. You retain access until the end of the current billing period. After that, your scores are excluded from future draws." },
 ];
 
+const steps = [
+  { num: "01", icon: CreditCard, label: "Subscribe", color: "text-lime bg-lime/10 border-lime/20", body: "Choose Monthly or Yearly. Your subscription funds the prize pool and routes your selected % directly to your charity on every renewal." },
+  { num: "02", icon: Database, label: "Log Scores", color: "text-violet-light bg-violet/10 border-violet/20", body: "Play golf. Log exactly five Stableford scores (1–45) through your dashboard each month to earn your draw entry." },
+  { num: "03", icon: Cpu, label: "Draw Runs", color: "text-coral bg-coral/10 border-coral/20", body: "On the 1st of each month, our algorithm draws 5 numbers from 1–45. Matches are checked against all eligible entries automatically." },
+  { num: "04", icon: HeartHandshake, label: "Win & Give", color: "text-lime bg-lime/10 border-lime/20", body: "Match 3, 4, or 5 numbers and receive your tier's % of the pool. Meanwhile your charity receives its share every single month." },
+];
+
+function Marquee({ text, dark = false }: { text: string; dark?: boolean }) {
+  const items = Array(14).fill(text);
+  return (
+    <div className={`overflow-hidden py-3.5 border-y ${dark ? "border-onyx-border bg-onyx" : "border-cream-border bg-cream-dim"}`}>
+      <div className="flex animate-marquee whitespace-nowrap select-none">
+        {items.map((t, i) => (
+          <span key={i} className={`text-xs font-black uppercase tracking-[0.25em] px-7 ${dark ? "text-onyx-muted" : "text-ink-faint"}`}>
+            {t} ◆
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Reveal({ children, delay = 0, className = "" }: any) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-8%" }} transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}
+      className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
 export default function HowItWorksClient() {
-    const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-    return (
-        <div className="bg-[#040C18] min-h-screen text-white pt-24 pb-32">
-            
-            {/* Header Section */}
-            <section className="max-w-4xl mx-auto px-6 lg:px-8 mb-24 text-center">
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 mb-8 mt-12 text-accent text-xs font-black uppercase tracking-widest">
-                    Technical Specifications
-                </motion.div>
-                <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="text-4xl md:text-6xl font-black mb-8 tracking-tighter">
-                    Architecture & Operations Protocol
-                </motion.h1>
-                <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="text-xl text-gray-400 font-medium leading-relaxed">
-                    Digital Heros is a subscription-based logic network executing fractional allocations to users capable of matching system-parameters generated dynamically each month. Explore the engine manual below.
-                </motion.p>
-            </section>
+  return (
+    <div className="bg-cream text-ink min-h-screen">
+      <PublicNavbar />
 
-            {/* Core Mechanics Matrix */}
-            <section className="max-w-7xl mx-auto px-6 lg:px-8 mb-32 border-t top-0 border-white/5 pt-24 relative">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
-                <h2 className="text-3xl font-black mb-16 text-center">Phase Interaction Loops</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once:true }} className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-md">
-                        <CreditCard className="text-accent mb-6" size={32} />
-                        <h3 className="text-xl font-bold mb-3">1. Sub-Initialization</h3>
-                        <p className="text-gray-400 font-medium text-sm leading-relaxed">Initiate a Stripe integration cycle (Monthly or Yearly). This secures your Node Identifier and routes a split directly into the global liquidity pool and your external Charity target.</p>
-                    </motion.div>
+      {/* ── HERO ── */}
+      <section className="pt-28 pb-16 px-6 lg:px-12 border-b border-cream-border max-w-[1400px] mx-auto">
+        <Reveal>
+          <p className="text-xs font-black uppercase tracking-[0.35em] text-ink-faint mb-4 flex items-center gap-2">
+            <span className="w-8 h-px bg-ink-faint" /> Documentation
+          </p>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+            <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-none">
+              How it<br /><span className="text-violet">works.</span>
+            </h1>
+            <p className="text-base text-ink-muted font-medium max-w-sm leading-relaxed">
+              A transparent, subscription-based platform that turns your golf scores into prize draw entries — while automatically supporting charity.
+            </p>
+          </div>
+        </Reveal>
+      </section>
 
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once:true }} transition={{ delay: 0.1 }} className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-md">
-                        <Database className="text-blue-400 mb-6" size={32} />
-                        <h3 className="text-xl font-bold mb-3">2. Data Ingestion</h3>
-                        <p className="text-gray-400 font-medium text-sm leading-relaxed">Play physical golf. Extrapolate Stableford format scores (1-45). Access your private portal and inject exactly five sets of values. Overwriting is natively handled dynamically.</p>
-                    </motion.div>
+      <Marquee text="Stableford scoring · Monthly draws · Charity distribution · Prize tiers · Transparent algorithm" />
 
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once:true }} transition={{ delay: 0.2 }} className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-md">
-                        <Cpu className="text-indigo-400 mb-6" size={32} />
-                        <h3 className="text-xl font-bold mb-3">3. Logic Parse Event</h3>
-                        <p className="text-gray-400 font-medium text-sm leading-relaxed">Monthly chronological trigger. The Master Engine compiles a unified 5-number array. Fractional dispersion vectors (40/35/25%) are calculated structurally against the global active user pool.</p>
-                    </motion.div>
+      {/* ── 4 STEPS GRID ── */}
+      <section className="border-b border-cream-border">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-20">
+          <Reveal className="mb-14">
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-ink-faint mb-3 flex items-center gap-2">
+              <span className="w-8 h-px bg-ink-faint" /> Phase Loops
+            </p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Four phases.</h2>
+          </Reveal>
 
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once:true }} transition={{ delay: 0.3 }} className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-md">
-                        <HeartPulse className="text-rose-500 mb-6" size={32} />
-                        <h3 className="text-xl font-bold mb-3">4. Structural Output</h3>
-                        <p className="text-gray-400 font-medium text-sm leading-relaxed">Instantaneous ledger sync. If 3+ figures correlate perfectly, verify your matrix offline and ingest capital directly back to your physical state.</p>
-                    </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border border-cream-border divide-y md:divide-y-0 md:divide-x divide-cream-border">
+            {steps.map(({ num, icon: Icon, label, color, body }, i) => (
+              <Reveal key={num} delay={i * 0.07} className={`p-8 md:p-10 bg-cream hover:bg-cream-dim transition-colors flex flex-col justify-between gap-8`}>
+                <div className="flex items-start justify-between">
+                  <div className={`w-12 h-12 border flex items-center justify-center ${color}`}>
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-5xl font-black font-mono text-cream-border leading-none">{num}</span>
                 </div>
-            </section>
-
-            {/* In Depth Technical Documentation */}
-            <section className="max-w-4xl mx-auto px-6 lg:px-8 mb-32 bg-[#081220] p-10 md:p-16 rounded-[3rem] border border-white/5">
-                <h2 className="text-3xl font-black mb-8 border-b border-white/10 pb-6">Distribution Matrix Physics</h2>
-                <div className="space-y-8 text-gray-300 font-medium leading-relaxed">
-                    <p>
-                        The Digital Heros platform relies completely on determinative validation logic instead of localized probability loops.
-                    </p>
-                    <p>
-                        <strong className="text-white block mb-2">Liquidity Routing:</strong> When an active user transfers capital into the system, fractions are structurally stripped prior to pool injection. Based on User Authority Settings, anywhere from <span className="text-accent font-bold mt-1">10 to 100%</span> bypasses global logistics and lands inherently in charity wallets. The residual figure becomes our <strong>Global Pool Fund</strong>.
-                    </p>
-                    <p>
-                        <strong className="text-white block mb-2">The Fraction Algorithm:</strong> Capital is split into internal tranches immediately upon execution.
-                    </p>
-                    <ul className="list-disc list-inside space-y-4 text-sm ml-4">
-                        <li><span className="text-white font-bold">Tier 1 Target (40%):</span> Reserved exclusively for vectors matching all 5 parameters. If absent, capital cascades inherently to the subsequent chronological cycle.</li>
-                        <li><span className="text-white font-bold">Tier 2 Target (35%):</span> Symmetrically dispersed against vectors sustaining 4 identical matches.</li>
-                        <li><span className="text-white font-bold">Tier 3 Target (25%):</span> Floor dispersal routing, spread against generic 3-match correlates.</li>
-                    </ul>
+                <div>
+                  <h3 className="text-xl font-black text-ink mb-2">{label}</h3>
+                  <p className="text-sm text-ink-muted leading-relaxed">{body}</p>
                 </div>
-            </section>
-
-            {/* Interactive FAQ Engine */}
-            <section className="max-w-3xl mx-auto px-6 lg:px-8">
-                <h2 className="text-3xl font-black mb-12 text-center">Inquiry Database Access</h2>
-                <div className="space-y-4">
-                    {FAQs.map((faq, index) => (
-                        <div key={index} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm transition-all duration-300">
-                            <button 
-                                onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-white/5 transition"
-                            >
-                                <span className="font-bold text-lg">{faq.q}</span>
-                                <ChevronDown 
-                                    className={`text-accent transition-transform duration-300 ${openFaq === index ? 'rotate-180' : ''}`}
-                                    size={20} 
-                                />
-                            </button>
-                            <AnimatePresence>
-                                {openFaq === index && (
-                                    <motion.div 
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <div className="px-6 pb-6 pt-2 text-gray-400 font-medium leading-relaxed border-t border-white/5 mt-2">
-                                            {faq.a}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    ))}
-                </div>
-                
-                <div className="mt-20 text-center">
-                    <Link href="/subscribe" className="inline-block bg-accent text-primary px-10 py-5 rounded-xl font-black hover:scale-105 transition-transform shadow-[0_0_30px_rgba(0,201,107,0.3)]">
-                        Clear Authorization. Engage Protocol.
-                    </Link>
-                </div>
-            </section>
-
+              </Reveal>
+            ))}
+          </div>
         </div>
-    );
+      </section>
+
+      {/* ── DISTRIBUTION MATRIX — dark section ── */}
+      <section className="bg-onyx text-cream border-b border-onyx-border">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-20">
+          <Reveal className="mb-14">
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-onyx-muted mb-3 flex items-center gap-2">
+              <span className="w-8 h-px bg-onyx-muted" /> Prize Physics
+            </p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-cream">Distribution matrix.</h2>
+          </Reveal>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-onyx-border divide-y lg:divide-y-0 lg:divide-x divide-onyx-border">
+            {/* Explanation */}
+            <Reveal className="p-10 md:p-14 flex flex-col gap-6">
+              <p className="text-onyx-muted text-base leading-relaxed font-medium">
+                The platform relies on determinative validation logic instead of probability loops. When you subscribe, your fee is split between the global prize pool and your selected charity.
+              </p>
+              <p className="text-onyx-muted text-base leading-relaxed font-medium">
+                The <span className="text-cream font-bold">Global Pool</span> is divided into three tiers the moment the draw executes. Tier 1 (5 matches) rolls over to next month if unclaimed — building a progressive jackpot.
+              </p>
+              <div className="border border-onyx-border p-6 mt-4">
+                <p className="text-2xs font-black uppercase tracking-widest text-onyx-muted mb-2">Score Range</p>
+                <p className="text-2xl font-black font-mono text-cream">1 — 45</p>
+                <p className="text-xs text-onyx-muted mt-1">Stableford points per round</p>
+              </div>
+            </Reveal>
+
+            {/* Tier breakdown */}
+            <div className="divide-y divide-onyx-border">
+              {[
+                { pct: "40%", label: "Tier 1 — 5 Matches", desc: "Full house. Rolls over if no winner that month.", bg: "bg-lime text-ink" },
+                { pct: "35%", label: "Tier 2 — 4 Matches", desc: "Split equally among all 4-match winners.", bg: "bg-violet text-cream" },
+                { pct: "25%", label: "Tier 3 — 3 Matches", desc: "Base tier. Split among all 3-match qualifiers.", bg: "bg-coral text-cream" },
+              ].map(({ pct, label, desc, bg }) => (
+                <Reveal key={label} className="p-8 md:p-10 flex items-center gap-6 bg-onyx hover:bg-onyx-card transition-colors">
+                  <div className={`w-16 h-16 shrink-0 font-black text-2xl font-mono flex items-center justify-center ${bg}`}>
+                    {pct}
+                  </div>
+                  <div>
+                    <p className="font-black text-cream text-sm mb-1">{label}</p>
+                    <p className="text-xs text-onyx-muted">{desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Marquee text="Rollover jackpot · Tier distribution · Score verification · Admin approval · Stripe payouts" dark />
+
+      {/* ── FAQ ── */}
+      <section className="border-b border-cream-border">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-20">
+          <Reveal className="mb-14">
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-ink-faint mb-3 flex items-center gap-2">
+              <span className="w-8 h-px bg-ink-faint" /> FAQs
+            </p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Common questions.</h2>
+          </Reveal>
+
+          <div className="border border-cream-border divide-y divide-cream-border">
+            {FAQs.map((faq, i) => (
+              <div key={i}>
+                <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full px-6 md:px-8 py-6 flex items-center justify-between text-left hover:bg-cream-dim transition-colors group">
+                  <span className="font-black text-base text-ink pr-6">{faq.q}</span>
+                  <div className={`w-8 h-8 border flex items-center justify-center shrink-0 transition-colors ${openFaq === i ? "border-violet bg-violet text-cream" : "border-cream-border text-ink-faint group-hover:border-ink-faint"}`}>
+                    <ChevronDown size={15} className={`transition-transform duration-300 ${openFaq === i ? "rotate-180" : ""}`} />
+                  </div>
+                </button>
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28 }} className="overflow-hidden">
+                      <div className="px-6 md:px-8 py-6 text-sm text-ink-muted leading-relaxed border-t border-cream-border bg-cream-dim font-medium">
+                        {faq.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="bg-violet">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-20">
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.35em] text-white/40 mb-4 flex items-center gap-2">
+                <span className="w-8 h-px bg-white/30" /> Get Started
+              </p>
+              <h2 className="text-5xl md:text-6xl font-black text-cream leading-none">Ready to play?</h2>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Link href="/subscribe"
+                className="inline-flex items-center gap-2 bg-lime text-ink font-black px-8 py-4 text-xs uppercase tracking-widest hover:bg-lime/80 transition-colors">
+                Subscribe Now <ArrowUpRight size={14} />
+              </Link>
+              <p className="text-xs text-white/30 font-medium">Cancel anytime · No hidden fees</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-ink border-t border-onyx-border">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-6 flex items-center justify-between gap-4">
+          <span className="font-black text-lg tracking-tighter text-cream">digital<span className="text-lime">heros</span></span>
+          <p className="text-xs text-onyx-muted">© {new Date().getFullYear()} Digital Heros</p>
+        </div>
+      </footer>
+    </div>
+  );
 }

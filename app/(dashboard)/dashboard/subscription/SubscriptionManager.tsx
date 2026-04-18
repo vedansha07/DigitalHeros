@@ -1,138 +1,190 @@
-"use client"
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { CreditCard, AlertCircle, Calendar } from 'lucide-react';
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CreditCard, Calendar, AlertTriangle, ArrowUpRight, Loader2, ShieldCheck, X } from "lucide-react";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
 
-export default function SubscriptionManager({ subscription, dbUser }: { subscription: any, dbUser: any }) {
-  const [loading, setLoading] = useState('');
-  const [showCancelModal, setShowCancelModal] = useState(false);
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 280, damping: 24 } } };
+
+function Marquee({ text }: { text: string }) {
+  const items = Array(12).fill(text);
+  return (
+    <div className="overflow-hidden py-3 border-y border-cream-border bg-cream-dim">
+      <div className="flex animate-marquee whitespace-nowrap select-none">
+        {items.map((t, i) => (
+          <span key={i} className="text-xs font-black uppercase tracking-[0.28em] px-8 text-ink-faint">{t} ◆</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function SubscriptionManager({ subscription, dbUser }: { subscription: any; dbUser: any }) {
+  const [loading, setLoading] = useState("");
+  const [showCancel, setShowCancel] = useState(false);
   const router = useRouter();
 
+  const isCancelled = subscription.status === "cancelled";
+  const renewalDate = subscription.end_date
+    ? new Date(subscription.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : "Unknown";
+
   const handlePortal = async () => {
-    setLoading('portal');
+    setLoading("portal");
     try {
-      const res = await fetch('/api/stripe/create-portal', { method: 'POST' });
+      const res = await fetch("/api/stripe/create-portal", { method: "POST" });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else alert(data.error || 'Failed to load billing portal.');
-    } catch(err) {
-       console.error(err);
-    }
-    setLoading('');
+      else toast.error(data.error || "Failed to load billing portal.");
+    } catch { toast.error("Network error."); }
+    setLoading("");
   };
 
   const handleCancel = async () => {
-    setLoading('cancel');
+    setLoading("cancel");
     try {
-      const res = await fetch('/api/stripe/cancel', { method: 'POST' });
+      const res = await fetch("/api/stripe/cancel", { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        alert("Subscription cancelled successfully. You will have access until your current billing period ends.");
-        setShowCancelModal(false);
+        toast.success("Subscription cancelled. Access continues until end of billing period.");
+        setShowCancel(false);
         router.refresh();
-      } else {
-        alert(data.error || 'Cancellation failed.');
-      }
-    } catch(err) {
-       console.error(err);
-    }
-    setLoading('');
-  }
-
-  const isCancelled = subscription.status === 'cancelled';
-  
-  const renewalDate = subscription.end_date 
-    ? new Date(subscription.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-    : 'Unknown';
+      } else toast.error(data.error || "Cancellation failed.");
+    } catch { toast.error("Network error."); }
+    setLoading("");
+  };
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden max-w-4xl">
-      <div className="p-8 sm:p-12">
-        <h3 className="text-2xl font-black text-primary mb-8 flex items-center gap-3">
-            <CreditCard className="text-accent" size={28} /> Membership Console
-        </h3>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-8 mb-10 bg-gray-50 p-8 rounded-2xl border border-gray-100">
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Current Tier</p>
-            <p className="text-3xl font-black text-primary capitalize">{subscription.plan}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Network Status</p>
-            <span className={`inline-block px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded shadow-sm ${!isCancelled ? 'bg-green-100 border border-green-200 text-green-800' : 'bg-red-100 border border-red-200 text-red-800'}`}>
-              {!isCancelled ? 'Active & Verifying' : 'Pending Cancellation'}
-            </span>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Billed Cycle Fee</p>
-            <p className="text-2xl font-bold text-primary">£{Number(subscription.monthly_fee || 0).toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{isCancelled ? 'Access Revoked On' : 'Next Cycle Scheduled'}</p>
-            <p className="text-xl font-bold text-primary flex items-center gap-2"><Calendar size={20} className="text-accent"/> {renewalDate}</p>
-          </div>
-        </div>
+    <motion.div variants={container} initial="hidden" animate="show" className="-mx-6 md:-mx-8 lg:-mx-12">
 
-        <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100">
-          {!isCancelled && (
-            <>
-              <button
-                onClick={handlePortal}
-                disabled={loading !== ''}
-                className="flex-1 bg-primary text-white px-8 py-4 rounded-xl font-bold hover:bg-primary/90 transition disabled:opacity-50 text-lg shadow-md"
-              >
-                {loading === 'portal' ? 'Authenticating...' : 'Manage Stripe Billing / Upgrades'}
-              </button>
-              
-              <button
-                onClick={() => setShowCancelModal(true)}
-                disabled={loading !== ''}
-                className="flex-1 bg-white text-red-600 border-2 border-red-100 px-8 py-4 rounded-xl font-bold hover:bg-red-50 hover:border-red-200 transition disabled:opacity-50 text-lg"
-              >
-                Terminate Subscription
-              </button>
-            </>
-          )}
-          {isCancelled && (
-             <button
-               onClick={handlePortal}
-               disabled={loading !== ''}
-               className="flex-1 bg-accent text-white px-8 py-4 rounded-xl font-bold hover:bg-accent/90 transition disabled:opacity-50 text-lg shadow-md"
-             >
-               {loading === 'portal' ? 'Authenticating...' : 'Re-activate Membership Base'}
-             </button>
-          )}
-        </div>
-      </div>
+      {/* ── HEADER ── */}
+      <motion.section variants={item} className="px-6 md:px-8 lg:px-12 pt-2 pb-8">
+        <p className="text-2xs font-black uppercase tracking-[0.3em] text-ink-faint mb-2 flex items-center gap-2">
+          <span className="w-6 h-px bg-ink-faint" /> Dashboard / Membership
+        </p>
+        <h1 className="text-5xl md:text-6xl font-black text-ink leading-none tracking-tight">
+          Membership<span className="text-violet">.</span>
+        </h1>
+        <p className="text-ink-muted text-sm font-medium mt-2">Manage your subscription, billing, and plan details.</p>
+      </motion.section>
 
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-primary/95 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-10 max-w-lg w-full shadow-2xl">
-              <div className="flex justify-center mb-6">
-                 <AlertCircle size={64} className="text-red-500" />
+      <Marquee text="Subscription status · Billing cycle · Plan management · Stripe portal · Renewal date" />
+
+      {/* ── STATS STRIP ── */}
+      <motion.section variants={item} className="grid grid-cols-2 lg:grid-cols-4 border-b border-cream-border divide-x divide-y lg:divide-y-0 divide-cream-border">
+        {[
+          { label: "Plan",     value: subscription.plan || "None",   bg: "bg-cream" },
+          { label: "Status",  value: isCancelled ? "Cancelled" : "Active",
+            bg: isCancelled ? "bg-coral text-cream" : "bg-lime text-ink" },
+          { label: "Fee",     value: `£${Number(subscription.monthly_fee || 0).toFixed(2)}`, bg: "bg-onyx text-cream" },
+          { label: isCancelled ? "Expires" : "Renews",
+            value: subscription.end_date ? new Date(subscription.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—",
+            bg: "bg-cream" },
+        ].map(({ label, value, bg }) => (
+          <div key={label} className={`p-7 md:p-10 ${bg}`}>
+            <p className="text-2xs font-black uppercase tracking-[0.28em] opacity-40 mb-5">{label}</p>
+            <p className="text-3xl md:text-4xl font-black font-mono leading-none capitalize">{value}</p>
+          </div>
+        ))}
+      </motion.section>
+
+      {/* ── ACTION PANEL ── */}
+      <motion.section variants={item} className="grid grid-cols-1 lg:grid-cols-2 border-b border-cream-border divide-y lg:divide-y-0 lg:divide-x divide-cream-border">
+
+        {/* Billing info */}
+        <div className="px-8 md:px-12 py-10">
+          <p className="text-2xs font-black uppercase tracking-[0.28em] text-ink-faint mb-6">Billing Details</p>
+
+          <div className="space-y-0 border border-cream-border divide-y divide-cream-border">
+            {[
+              { label: "Plan", value: subscription.plan || "None" },
+              { label: "Renewal", value: renewalDate },
+              { label: "Monthly Fee", value: `£${Number(subscription.monthly_fee || 0).toFixed(2)}` },
+              { label: "Status", value: isCancelled ? "Cancelled" : "Active" },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between px-5 py-4 bg-cream">
+                <p className="text-xs font-black uppercase tracking-widest text-ink-faint">{label}</p>
+                <p className="text-sm font-black text-ink font-mono capitalize">{value}</p>
               </div>
-            <h4 className="text-3xl font-black text-primary mb-4 text-center tracking-tight">Initiate Termination?</h4>
-            <p className="text-gray-500 mb-8 text-center text-lg font-medium">
-              You will definitively lose access to premium platform functionalities and Charity Draw entries automatically at the conclusion of your current billing period <strong className="text-primary">{renewalDate}</strong>.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleCancel}
-                disabled={loading === 'cancel'}
-                className="w-full py-4 px-6 bg-red-600 text-white rounded-xl font-black text-lg hover:bg-red-700 transition disabled:opacity-50 shadow-md"
-              >
-                {loading === 'cancel' ? 'Executing Terminate...' : 'Yes, Terminate My Plan'}
-              </button>
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="w-full py-4 px-6 border-2 border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50 hover:text-black transition"
-              >
-                Abort & Keep Active
-              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 mt-5 text-xs text-ink-faint font-semibold">
+            <ShieldCheck size={13} /> Secure billing managed by Stripe
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="px-8 md:px-12 py-10 flex flex-col justify-between gap-8">
+          <div>
+            <p className="text-2xs font-black uppercase tracking-[0.28em] text-ink-faint mb-6">Actions</p>
+            <div className="space-y-3">
+              {!isCancelled ? (
+                <>
+                  <button onClick={handlePortal} disabled={loading !== ""}
+                    className="w-full h-12 bg-ink hover:bg-violet text-cream font-black text-xs uppercase tracking-[0.2em] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    {loading === "portal" ? <><Loader2 size={13} className="animate-spin" /> Loading...</> : <><CreditCard size={13} /> Manage Billing <ArrowUpRight size={13} /></>}
+                  </button>
+                  <button onClick={() => setShowCancel(true)} disabled={loading !== ""}
+                    className="w-full h-12 border border-coral/30 text-coral hover:bg-coral hover:text-cream font-black text-xs uppercase tracking-[0.2em] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    <AlertTriangle size={13} /> Cancel Subscription
+                  </button>
+                </>
+              ) : (
+                <button onClick={handlePortal} disabled={loading !== ""}
+                  className="w-full h-12 bg-lime hover:bg-lime/80 text-ink font-black text-xs uppercase tracking-[0.2em] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                  {loading === "portal" ? <><Loader2 size={13} className="animate-spin" /> Loading...</> : <><CreditCard size={13} /> Reactivate Membership <ArrowUpRight size={13} /></>}
+                </button>
+              )}
             </div>
           </div>
+
+          {isCancelled && (
+            <div className="border border-coral/20 bg-coral/5 p-5 text-sm">
+              <p className="font-black text-coral mb-1 text-xs uppercase tracking-widest">Cancelled</p>
+              <p className="text-ink-muted font-medium leading-relaxed">
+                Your access continues until <span className="font-bold text-ink">{renewalDate}</span>. Reactivate anytime to resume draw entries.
+              </p>
+            </div>
+          )}
+        </div>
+      </motion.section>
+
+      {/* ── CANCEL MODAL ── */}
+      {showCancel && (
+        <div className="fixed inset-0 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-5 z-50">
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-cream border border-cream-border max-w-md w-full p-8 shadow-card-lg">
+            <div className="flex items-start justify-between mb-6">
+              <div className="w-12 h-12 border border-coral/20 bg-coral/5 flex items-center justify-center">
+                <AlertTriangle size={22} className="text-coral" />
+              </div>
+              <button onClick={() => setShowCancel(false)} className="p-2 text-ink-faint hover:text-ink transition">
+                <X size={18} />
+              </button>
+            </div>
+
+            <h4 className="text-2xl font-black text-ink mb-3">Cancel subscription?</h4>
+            <p className="text-sm text-ink-muted font-medium leading-relaxed mb-8">
+              You&apos;ll retain access until{" "}
+              <strong className="text-ink">{renewalDate}</strong>. After that date, your scores are excluded from future draws.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button onClick={handleCancel} disabled={loading === "cancel"}
+                className="w-full h-12 bg-coral hover:bg-coral/90 text-cream font-black text-xs uppercase tracking-[0.2em] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {loading === "cancel" ? <><Loader2 size={13} className="animate-spin" /> Cancelling...</> : "Yes, Cancel Plan"}
+              </button>
+              <button onClick={() => setShowCancel(false)}
+                className="w-full h-12 border border-cream-border text-ink font-black text-xs uppercase tracking-[0.2em] hover:bg-cream-dim transition-colors">
+                Keep My Plan
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
-    </div>
-  )
+    </motion.div>
+  );
 }
