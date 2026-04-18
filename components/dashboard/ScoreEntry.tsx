@@ -106,4 +106,5 @@ export default function ScoreEntry({ scoresCount, existingDates, onScoreAdded }:
             </div>
         )}
         </>
+    );
 }
