@@ -1,12 +1,18 @@
 import { requireAdmin } from '@/lib/supabase/auth';
 import AdminWinnersClient from './AdminWinnersClient';
+import BackButton from '@/components/ui/BackButton';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 export default async function AdminWinnersPage() {
     await requireAdmin();
     return (
-        <div className="max-w-7xl mx-auto py-10 px-4">
-            <h1 className="text-3xl font-extrabold text-primary mb-2">Prize Winner Verifications</h1>
-            <p className="text-gray-600 font-medium mb-8">Review uploaded photographic evidence, approve payouts, and execute fund dispatches securely.</p>
+        <div>
+            <BackButton href="/admin" label="Back to Overview" />
+            <Breadcrumb crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Winners' }]} />
+            <div className="mb-8">
+                <h1 className="text-3xl font-black text-primary tracking-tight">Prize Verifications</h1>
+                <p className="text-muted text-sm font-medium mt-1.5">Review scorecards, approve payouts, and mark prizes as paid.</p>
+            </div>
             <AdminWinnersClient />
         </div>
     )

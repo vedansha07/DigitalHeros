@@ -1,131 +1,103 @@
-"use client"
-
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { Eye, EyeOff, Loader2, Check } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SignupPage() {
-  const router = useRouter()
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const pwMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
-    if (password.length < 6) {
-      setError("Password should be at least 6 characters")
-      return
-    }
-    
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
 
-    const supabase = createClient()
+    setLoading(true);
+    setError("");
+
+    const supabase = createClient();
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName
-        }
-      }
-    })
+      options: { data: { full_name: fullName } },
+    });
 
     if (authError) {
-      setError(authError.message)
-      setLoading(false)
-      return
+      setError(authError.message);
+      setLoading(false);
+      return;
     }
 
-    router.push('/subscribe')
-    router.refresh()
-  }
+    toast.success("Account created! Redirecting to plans...");
+    router.push("/subscribe");
+    router.refresh();
+  };
+
+  const inputClass = "w-full h-11 px-4 rounded-xl border border-surface-border bg-surface text-sm text-primary placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition";
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold text-primary">Create an account</h2>
-        <p className="text-sm text-gray-500 mt-2">Enter your details to get started.</p>
+    <div>
+      <div className="mb-7">
+        <h1 className="text-2xl font-black text-primary tracking-tight">Create your account</h1>
+        <p className="text-sm text-muted mt-1.5">Join Digital Heros and start making a difference.</p>
       </div>
 
-      <form onSubmit={handleSignup} className="flex flex-col gap-4">
+      <form onSubmit={handleSignup} className="space-y-4">
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
-            {error}
+          <div className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100 font-medium flex items-start gap-2">
+            <span className="text-red-500 mt-0.5">⚠</span> {error}
           </div>
         )}
-        
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-primary">Full Name</label>
-          <input
-            required
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-            placeholder="John Doe"
-          />
+
+        <div className="space-y-1.5">
+          <label htmlFor="full-name" className="block text-sm font-semibold text-primary">Full name</label>
+          <input id="full-name" type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClass} placeholder="John Smith" autoComplete="name" />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-primary">Email</label>
-          <input
-            required
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-            placeholder="jsmith@example.com"
-          />
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-sm font-semibold text-primary">Email address</label>
+          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="you@example.com" autoComplete="email" />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-primary">Password</label>
-          <input
-            required
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-            placeholder="••••••••"
-          />
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-sm font-semibold text-primary">Password</label>
+          <div className="relative">
+            <input id="password" type={showPw ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pr-11`} placeholder="Min. 6 characters" autoComplete="new-password" />
+            <button type="button" aria-label={showPw ? "Hide password" : "Show password"} onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-light hover:text-muted transition p-1">
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-primary">Confirm Password</label>
-          <input
-            required
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-            placeholder="••••••••"
-          />
+        <div className="space-y-1.5">
+          <label htmlFor="confirm-password" className="block text-sm font-semibold text-primary">Confirm password</label>
+          <div className="relative">
+            <input id="confirm-password" type={showPw ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`${inputClass} pr-11 ${confirmPassword.length > 0 && !pwMatch ? "border-red-300 focus:ring-red-400" : pwMatch ? "border-accent" : ""}`} placeholder="••••••••" autoComplete="new-password" />
+            {pwMatch && <Check size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-accent" />}
+          </div>
+          {confirmPassword.length > 0 && !pwMatch && <p className="text-xs text-red-500 font-medium">Passwords don&apos;t match</p>}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-2 mt-2 transition disabled:opacity-70"
-        >
-          {loading ? 'Creating account...' : 'Sign up'}
+        <button type="submit" disabled={loading} className="w-full h-11 bg-primary hover:bg-primary-light text-white font-bold text-sm rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 mt-2 hover:shadow-card-md">
+          {loading ? <><Loader2 size={16} className="animate-spin" /> Creating account...</> : "Create account"}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-500">
-        Already have an account?{' '}
-        <Link href="/login" className="text-accent font-medium hover:underline">
-          Sign in
-        </Link>
+      <p className="text-center text-sm text-muted mt-6">
+        Already have an account?{" "}
+        <Link href="/login" className="text-accent font-semibold hover:text-accent/80 transition">Sign in</Link>
       </p>
     </div>
-  )
+  );
 }
