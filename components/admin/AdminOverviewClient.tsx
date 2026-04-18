@@ -1,6 +1,6 @@
 "use client"
 import { motion } from 'framer-motion';
-import { Users, CreditCard, Award, HeartHandshake, ArrowRight, Activity, TrendingUp } from 'lucide-react';
+import { Users, CreditCard, Award, HeartHandshake, ArrowRight, Activity, TrendingUp, Target } from 'lucide-react';
 import Link from 'next/link';
 
 const container = {

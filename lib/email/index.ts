@@ -9,7 +9,7 @@ import VerificationRejected from './templates/verification-rejected';
 import PaymentConfirmed from './templates/payment-confirmed';
 import DonationConfirmed from './templates/donation-confirmed';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_123');
+export const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_123');
 
 export async function sendEmail(templateId: string, to: string, data: any) {
   let subject = "Digital Heros Update";
