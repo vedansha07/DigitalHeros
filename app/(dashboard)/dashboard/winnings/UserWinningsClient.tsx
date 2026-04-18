@@ -1,135 +1,188 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+"use client";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import { Award, Upload, Loader2, CheckCircle, Clock, XCircle, Trophy } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function UserWinningsClient() {
-    const [winnings, setWinnings] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [winnings, setWinnings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
-    const loadData = async () => {
-        const res = await fetch('/api/user/winnings');
-        const data = await res.json();
-        if (data.winnings) setWinnings(data.winnings);
-        setLoading(false);
+  const loadData = async () => {
+    const res = await fetch("/api/user/winnings", { credentials: "include" });
+    const data = await res.json();
+    if (data.winnings) setWinnings(data.winnings);
+    setLoading(false);
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleUpload = async (file: File, resultId: string) => {
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      toast.error("Images only — JPG or PNG required.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large — maximum 5MB.");
+      return;
     }
 
-    useEffect(() => { loadData(); }, []);
+    setUploadingId(resultId);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `${resultId}-${Date.now()}.${ext}`;
 
-    const handleUpload = async (file: File, resultId: string) => {
-        setUploadingId(resultId);
-        
-        if (!['image/jpeg', 'image/png'].includes(file.type)) {
-            alert('Images only: Must be JPG or PNG.');
-            setUploadingId(null); return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-            alert('File too large: Must be less than 5MB.');
-            setUploadingId(null); return;
-        }
+    const { error: upErr } = await supabase.storage
+      .from("winner-proofs")
+      .upload(path, file);
 
-        const ext = file.name.split('.').pop();
-        const path = `${resultId}-${Date.now()}.${ext}`;
-
-        const { error: upErr } = await supabase.storage.from('winner-proofs').upload(path, file);
-        if (upErr) {
-            alert('Failed to securely upload image.');
-            setUploadingId(null); return;
-        }
-
-        const { data } = supabase.storage.from('winner-proofs').getPublicUrl(path);
-        
-        const res = await fetch(`/api/user/winnings/${resultId}/proof`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ proof_url: data.publicUrl })
-        });
-        
-        if (res.ok) {
-            alert('Proof submitted securely! Awaiting admin review.');
-            loadData();
-        } else alert('Submission failed to register on the server.');
-        
-        setUploadingId(null);
+    if (upErr) {
+      toast.error("Upload failed. Please try again.");
+      setUploadingId(null);
+      return;
     }
 
-    if (loading) return <div className="text-gray-500 font-bold p-10 text-center animate-pulse">Loading Winnings...</div>;
+    const { data } = supabase.storage.from("winner-proofs").getPublicUrl(path);
 
-    if (winnings.length === 0) return <div className="bg-white p-16 text-center rounded-2xl border border-gray-100 shadow-sm text-gray-500 shadow-inner">You haven't won any prizes yet. Ensure you record your 5 scores before monthly draws!</div>;
+    const res = await fetch(`/api/user/winnings/${resultId}/proof`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proof_url: data.publicUrl }),
+      credentials: "include",
+    });
 
+    if (res.ok) {
+      toast.success("Scorecard submitted! Awaiting admin review.");
+      loadData();
+    } else {
+      toast.error("Submission failed. Please try again.");
+    }
+
+    setUploadingId(null);
+  };
+
+  if (loading) {
     return (
-        <div className="space-y-6">
-            {winnings.map(win => {
-                const verified = win.winner_verifications && win.winner_verifications.length > 0 ? win.winner_verifications[0] : null;
-                const status = verified ? verified.admin_status : 'not_submitted';
-                
-                return (
-                    <div key={win.id} className="bg-white border hover:border-gray-300 transition rounded-2xl p-8 shadow-sm flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
-                        <div className="flex-1 w-full">
-                            <div className="flex flex-wrap items-center gap-3 mb-4">
-                                <h3 className="text-2xl font-extrabold text-primary">{win.draws?.draw_month}</h3>
-                                <span className="bg-accent/10 border border-accent/20 text-accent font-bold px-3 py-1 rounded text-sm uppercase tracking-wider">{win.match_type.replace('_', ' ')}es</span>
-                                {win.payment_status === 'paid' && <span className="bg-green-100 border border-green-200 text-green-800 font-bold px-3 py-1 rounded text-sm uppercase tracking-wider">PAID</span>}
-                            </div>
-                            <p className="text-4xl font-black text-primary mb-3">£{win.prize_amount.toFixed(2)}</p>
-                            
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Status:</span>
-                                {status === 'not_submitted' && <span className="text-gray-500 font-bold bg-gray-100 px-3 py-1 rounded-full text-xs">Awaiting Proof</span>}
-                                {status === 'pending' && <span className="text-orange-500 font-bold bg-orange-50 border border-orange-100 px-3 py-1 rounded-full text-xs">Review Pending</span>}
-                                {status === 'approved' && <span className="text-green-600 font-bold bg-green-50 border border-green-100 px-3 py-1 rounded-full text-xs">Approved</span>}
-                                {status === 'rejected' && <span className="text-red-500 font-bold bg-red-50 border border-red-100 px-3 py-1 rounded-full text-xs">Rejected</span>}
-                            </div>
-                            
-                            {status === 'rejected' && verified?.admin_notes && (
-                                <div className="mt-4 bg-red-50 p-4 rounded-xl text-sm text-red-800 border border-red-200 font-medium">
-                                    <strong className="text-red-900 mb-1 block">Admin Follow-up required:</strong> {verified.admin_notes}
-                                </div>
-                            )}
-                        </div>
+      <div className="space-y-4">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-36 bg-surface-subtle rounded-2xl border border-surface-border animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
-                        {win.payment_status !== 'paid' && status !== 'approved' && status !== 'pending' && (
-                            <div className="bg-gray-50 border-2 border-dashed border-gray-200 p-6 rounded-2xl w-full md:w-80 group hover:bg-gray-100 transition relative">
-                                <label className="block text-sm font-bold text-primary mb-2">Upload Certified Score Card</label>
-                                <p className="text-xs text-gray-500 mb-4 font-medium">(JPG/PNG only, 5MB Max)</p>
-                                
-                                <input 
-                                    type="file" 
-                                    accept="image/png, image/jpeg" 
-                                    disabled={uploadingId === win.id}
-                                    onChange={(e) => {
-                                        if (e.target.files && e.target.files[0]) handleUpload(e.target.files[0], win.id);
-                                    }}
-                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary file:text-white hover:file:bg-primary/90 transition cursor-pointer"
-                                />
-                                {uploadingId === win.id && <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center text-accent font-bold">Uploading securely...</div>}
-                            </div>
-                        )}
-                        
-                        {status === 'pending' && (
-                            <div className="text-sm w-full md:w-80 text-orange-600 font-bold bg-orange-50 p-6 rounded-2xl border border-orange-100 text-center shadow-sm">
-                                Proof currently under review.
-                            </div>
-                        )}
+  if (winnings.length === 0) {
+    return (
+      <div className="bg-surface rounded-2xl border border-surface-border shadow-card">
+        <EmptyState
+          icon={Trophy}
+          title="No winnings yet"
+          description="You'll appear here once you win a monthly draw. Make sure you have 5 scores logged before each draw date."
+        />
+      </div>
+    );
+  }
 
-                        {(status === 'approved' || win.payment_status === 'paid') && (
-                            <div className="w-full md:w-80 text-center">
-                                {win.payment_status === 'paid' ? 
-                                    <div className="bg-green-100/50 border border-green-200 p-6 rounded-2xl">
-                                        <p className="text-green-800 font-bold">Payment has been dispatched.</p>
-                                    </div> 
-                                : 
-                                    <div className="bg-accent/10 border border-accent/20 p-6 rounded-2xl">
-                                        <p className="text-accent font-bold">Proof Approved. Processing Payout.</p>
-                                    </div>
-                                }
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-        </div>
-    )
+  const statusConfig: Record<string, { label: string; icon: any; cls: string }> = {
+    not_submitted: { label: "Awaiting Proof", icon: Clock, cls: "text-muted bg-surface-subtle border-surface-border" },
+    pending:       { label: "Under Review",   icon: Clock, cls: "text-warning bg-amber-50 border-amber-100" },
+    approved:      { label: "Approved",       icon: CheckCircle, cls: "text-accent bg-accent/10 border-accent/20" },
+    rejected:      { label: "Rejected",       icon: XCircle, cls: "text-danger bg-red-50 border-red-100" },
+  };
+
+  return (
+    <div className="space-y-5">
+      {winnings.map((win) => {
+        const verified = win.winner_verifications?.[0] ?? null;
+        const status = verified ? verified.admin_status : "not_submitted";
+        const cfg = statusConfig[status] ?? statusConfig.not_submitted;
+        const StatusIcon = cfg.icon;
+
+        return (
+          <div
+            key={win.id}
+            className="bg-surface rounded-2xl border border-surface-border shadow-card hover:shadow-card-md transition-shadow overflow-hidden"
+          >
+            {/* Header row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-surface-border">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <Award size={22} className="text-accent" />
+                </div>
+                <div>
+                  <p className="text-2xs font-bold text-muted-light uppercase tracking-widest">{win.draws?.draw_month}</p>
+                  <p className="text-2xl font-black text-primary font-mono">£{win.prize_amount?.toFixed(2)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-2xs font-black uppercase tracking-widest text-muted bg-surface-subtle border border-surface-border px-2.5 py-1 rounded-lg">
+                  {win.match_type?.replace("_", " ")}
+                </span>
+                <span className={`inline-flex items-center gap-1.5 text-2xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${cfg.cls}`}>
+                  <StatusIcon size={11} /> {cfg.label}
+                </span>
+                {win.payment_status === "paid" && (
+                  <span className="text-2xs font-black uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-lg">
+                    Paid
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              {/* Rejection notes */}
+              {status === "rejected" && verified?.admin_notes && (
+                <div className="mb-5 bg-red-50 border border-red-100 rounded-xl p-4 text-sm text-red-700 font-medium">
+                  <strong className="block mb-1 font-black">Admin note:</strong>
+                  {verified.admin_notes}
+                </div>
+              )}
+
+              {/* Upload zone */}
+              {win.payment_status !== "paid" && status !== "approved" && status !== "pending" && (
+                <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl p-8 cursor-pointer transition-colors ${uploadingId === win.id ? "border-accent/40 bg-accent/5" : "border-surface-border hover:border-accent/40 hover:bg-surface-subtle"}`}>
+                  {uploadingId === win.id ? (
+                    <><Loader2 size={24} className="text-accent animate-spin" /><p className="text-sm font-semibold text-muted">Uploading...</p></>
+                  ) : (
+                    <>
+                      <Upload size={24} className="text-muted-light" />
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-primary">Upload certified scorecard</p>
+                        <p className="text-xs text-muted mt-1">JPG or PNG · max 5MB</p>
+                      </div>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg"
+                    className="sr-only"
+                    disabled={!!uploadingId}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) handleUpload(e.target.files[0], win.id);
+                    }}
+                  />
+                </label>
+              )}
+
+              {status === "pending" && (
+                <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-700 font-semibold">
+                  <Clock size={16} className="shrink-0" /> Your scorecard is under admin review. We&apos;ll notify you once it&apos;s approved.
+                </div>
+              )}
+
+              {(status === "approved" || win.payment_status === "paid") && (
+                <div className={`flex items-center gap-3 rounded-xl p-4 text-sm font-semibold ${win.payment_status === "paid" ? "bg-accent/10 border border-accent/20 text-accent" : "bg-surface-subtle border border-surface-border text-muted"}`}>
+                  <CheckCircle size={16} className="shrink-0" />
+                  {win.payment_status === "paid" ? "Payment dispatched to your account." : "Proof approved — payout is being processed."}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }

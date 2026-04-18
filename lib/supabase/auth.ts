@@ -12,15 +12,31 @@ export async function getCurrentUser() {
     .eq('id', user.id)
     .single()
 
-  return { authUser: user, dbUser }
+  return { authUser: user, dbUser: dbUser ?? null }
 }
 
 export async function requireAuth() {
   const user = await getCurrentUser()
-  if (!user) {
+  if (!user?.authUser) {
     redirect('/login')
   }
-  return user
+  // If there's no DB row yet, the user just signed up.
+  // Return a safe default so pages don't crash.
+  return {
+    authUser: user.authUser,
+    dbUser: user.dbUser ?? {
+      id: user.authUser.id,
+      full_name: user.authUser.user_metadata?.full_name ?? 'Player',
+      email: user.authUser.email,
+      subscription_status: 'inactive',
+      subscription_plan: null,
+      selected_charity_id: null,
+      charity_contribution_percentage: 10,
+      subscription_renewal_date: null,
+      stripe_customer_id: null,
+      is_admin: false,
+    },
+  }
 }
 
 export async function requireAdmin() {

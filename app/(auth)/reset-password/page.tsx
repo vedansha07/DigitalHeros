@@ -1,91 +1,133 @@
-"use client"
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Eye, EyeOff, Loader2, Check, Lock } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ResetPasswordPage() {
-  const router = useRouter()
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const pwMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
 
   const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+      setError("Passwords do not match.");
+      return;
     }
     if (password.length < 6) {
-      setError("Password should be at least 6 characters")
-      return
+      setError("Password must be at least 6 characters.");
+      return;
     }
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
 
-    const supabase = createClient()
+    const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({
-      password: password
-    })
+      password: password,
+    });
 
     if (updateError) {
-      setError(updateError.message)
-      setLoading(false)
-      return
+      setError(updateError.message);
+      setLoading(false);
+      return;
     }
 
-    // Redirect to login after successful password update
-    router.push('/login')
-  }
+    toast.success("Password updated successfully! Please sign in.");
+    router.push("/login");
+  };
+
+  const inputClass = "w-full h-11 px-4 rounded-xl border border-surface-border bg-surface text-sm text-primary placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition";
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold text-primary">Set new password</h2>
-        <p className="text-sm text-gray-500 mt-2">Please enter your new password below.</p>
+    <div>
+      <div className="mb-7">
+        <div className="h-12 w-12 rounded-xl bg-primary/5 border border-surface-border flex items-center justify-center mb-5">
+          <Lock size={22} className="text-primary" />
+        </div>
+        <h1 className="text-2xl font-black text-primary tracking-tight">Set new password</h1>
+        <p className="text-sm text-muted mt-1.5">Enter your new password below.</p>
       </div>
 
-      <form onSubmit={handleUpdate} className="flex flex-col gap-4">
+      <form onSubmit={handleUpdate} className="space-y-5">
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
-            {error}
+          <div className="bg-red-50 text-red-700 text-sm p-3.5 rounded-xl border border-red-100 font-medium flex items-start gap-2">
+            <span className="text-red-500 mt-0.5">⚠</span> {error}
           </div>
         )}
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-primary">New Password</label>
-          <input
-            required
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-            placeholder="••••••••"
-          />
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-sm font-semibold text-primary">
+            New Password
+          </label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPw ? "text" : "password"}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${inputClass} pr-11`}
+              placeholder="Min. 6 characters"
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              aria-label={showPw ? "Hide password" : "Show password"}
+              onClick={() => setShowPw(!showPw)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-light hover:text-muted transition p-1"
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-primary">Confirm New Password</label>
-          <input
-            required
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-            placeholder="••••••••"
-          />
+        <div className="space-y-1.5">
+          <label htmlFor="confirm-password" className="block text-sm font-semibold text-primary">
+            Confirm New Password
+          </label>
+          <div className="relative">
+            <input
+              id="confirm-password"
+              type={showPw ? "text" : "password"}
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={`${inputClass} pr-11 ${
+                confirmPassword.length > 0 && !pwMatch ? "border-red-300 focus:ring-red-400" : pwMatch ? "border-accent" : ""
+              }`}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+            {pwMatch && <Check size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-accent" />}
+          </div>
+          {confirmPassword.length > 0 && !pwMatch && (
+            <p className="text-xs text-red-500 font-medium">Passwords don&apos;t match</p>
+          )}
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-2 mt-2 transition disabled:opacity-70"
+          className="w-full h-11 bg-primary hover:bg-primary-light text-white font-bold text-sm rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 mt-2 hover:shadow-card-md"
         >
-          {loading ? 'Updating...' : 'Update password'}
+          {loading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> Updating...
+            </>
+          ) : (
+            "Update password"
+          )}
         </button>
       </form>
     </div>
-  )
+  );
 }

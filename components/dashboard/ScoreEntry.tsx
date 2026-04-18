@@ -59,33 +59,27 @@ export default function ScoreEntry({ scoresCount, existingDates, onScoreAdded }:
 
     return (
         <>
-        <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
-            <h3 className="text-xl font-bold text-primary mb-2">Add New Score</h3>
-            
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm font-medium text-gray-500 mb-6">
-               <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-700">Capacity: {scoresCount}/5 scores</span>
-            </div>
+        <form onSubmit={handleSubmit} className="mb-6">
+            {error && <div className="text-red-700 bg-red-50 p-3.5 rounded-xl mb-4 text-sm border border-red-100 font-medium flex items-start gap-2"><span className="text-red-500 mt-0.5">⚠</span> {error}</div>}
 
-            {error && <div className="text-red-600 bg-red-50 p-4 rounded-lg mb-6 text-sm border border-red-100">{error}</div>}
-
-            <div className="flex flex-col sm:flex-row gap-6">
+            <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                    <label className="block text-sm font-semibold text-primary mb-2" htmlFor="score_date">Score Date</label>
-                    <input id="score_date" type="date" required value={date} onChange={e=>setDate(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 text-gray-900 focus:ring-2 focus:ring-accent outline-none transition" />
+                    <label className="block text-xs font-bold text-muted-light uppercase tracking-widest mb-2" htmlFor="score_date">Score Date</label>
+                    <input id="score_date" type="date" required value={date} onChange={e=>setDate(e.target.value)} className="w-full h-11 border border-surface-border rounded-xl px-4 text-sm text-primary focus:ring-2 focus:ring-accent focus:border-accent outline-none transition bg-surface" />
                 </div>
-                
+
                 <div className="flex-1">
-                    <label className="block text-sm font-semibold text-primary mb-2" htmlFor="score_value">Stableford Score (1-45)</label>
+                    <label className="block text-xs font-bold text-muted-light uppercase tracking-widest mb-2" htmlFor="score_value">Stableford Score (1–45)</label>
                     <div className="flex items-center">
-                        <button type="button" aria-label="Decrease score" onClick={()=>setScore(Math.max(1, score-1))} className="px-5 py-3 h-[46px] min-w-[44px] flex items-center justify-center bg-gray-50 rounded-l-xl border border-gray-200 border-r-0 hover:bg-gray-100 transition font-bold text-lg text-gray-600">-</button>
-                        <input id="score_value" type="number" required min="1" max="45" value={score} onChange={e=>setScore(parseInt(e.target.value) || 0)} className="h-[46px] w-full border border-gray-200 p-3 text-center outline-none focus:ring-2 focus:ring-accent z-10 text-lg font-bold text-primary" />
-                        <button type="button" aria-label="Increase score" onClick={()=>setScore(Math.min(45, score+1))} className="px-5 py-3 h-[46px] min-w-[44px] flex items-center justify-center bg-gray-50 rounded-r-xl border border-gray-200 border-l-0 hover:bg-gray-100 transition font-bold text-lg text-gray-600">+</button>
+                        <button type="button" aria-label="Decrease" onClick={()=>setScore(Math.max(1, score-1))} className="h-11 w-12 flex items-center justify-center bg-surface-subtle rounded-l-xl border border-surface-border border-r-0 hover:bg-surface-border transition font-bold text-lg text-muted">−</button>
+                        <input id="score_value" type="number" required min="1" max="45" value={score} onChange={e=>setScore(parseInt(e.target.value)||0)} className="h-11 w-full border border-surface-border px-3 text-center outline-none focus:ring-2 focus:ring-accent text-lg font-black text-primary font-mono" />
+                        <button type="button" aria-label="Increase" onClick={()=>setScore(Math.min(45, score+1))} className="h-11 w-12 flex items-center justify-center bg-surface-subtle rounded-r-xl border border-surface-border border-l-0 hover:bg-surface-border transition font-bold text-lg text-muted">+</button>
                     </div>
                 </div>
 
                 <div className="sm:flex-none flex items-end">
-                    <button type="submit" disabled={loading} className="w-full h-[46px] min-w-[44px] sm:w-40 bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary/90 transition disabled:opacity-50">
-                        {loading ? 'Adding...' : 'Add Score'}
+                    <button type="submit" disabled={loading} className="w-full h-11 sm:w-36 bg-accent hover:bg-accent/90 text-primary font-black text-sm px-6 rounded-xl transition-all disabled:opacity-50 hover:shadow-glow-sm">
+                        {loading ? "Adding…" : "Add Score"}
                     </button>
                 </div>
             </div>

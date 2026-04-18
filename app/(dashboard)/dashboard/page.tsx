@@ -1,25 +1,36 @@
 import { requireAuth } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/server';
 import DashboardOverviewClient from '@/components/dashboard/DashboardOverviewClient';
+import { redirect } from 'next/navigation';
 
-// Ensure this route does not heavily cache
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardMainPage() {
     const { dbUser } = await requireAuth();
     const supabase = createClient();
 
-    const { data: scores } = await supabase.from('golf_scores')
-        .select('*')
-        .eq('user_id', dbUser.id)
-        .order('created_at', { ascending: true });
+    // If subscription not active, send to subscribe page
+    if (dbUser.subscription_status !== 'active') {
+        redirect('/subscribe');
+    }
 
-    const { data: nextDraw } = await supabase.from('draws')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+    const [scoresRes, drawRes, winningsRes] = await Promise.all([
+        supabase.from('golf_scores')
+            .select('*')
+            .eq('user_id', dbUser.id)
+            .order('created_at', { ascending: true }),
+        supabase.from('draws')
+            .select('*')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single(),
+        supabase.from('draw_results')
+            .select('*, draws(draw_month)')
+            .eq('user_id', dbUser.id)
+            .order('created_at', { ascending: false })
+            .limit(3),
+    ]);
 
     let charity = null;
     if (dbUser.selected_charity_id) {
@@ -30,18 +41,13 @@ export default async function DashboardMainPage() {
         charity = data;
     }
 
-    const { data: winnings } = await supabase.from('draw_results')
-        .select('*, draws(draw_month)')
-        .eq('user_id', dbUser.id)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-    // Pass the raw data down to the motion wrapper
-    return <DashboardOverviewClient 
-        dbUser={dbUser} 
-        scores={scores || []} 
-        nextDraw={nextDraw} 
-        charity={charity} 
-        winnings={winnings || []} 
-    />;
+    return (
+        <DashboardOverviewClient
+            dbUser={dbUser}
+            scores={scoresRes.data || []}
+            nextDraw={drawRes.data ?? null}
+            charity={charity}
+            winnings={winningsRes.data || []}
+        />
+    );
 }
