@@ -1,16 +1,40 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
 export async function getCurrentUser() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: dbUser } = await supabase
+  let { data: dbUser } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single()
+
+  // Fallback if the Supabase trigger failed or hasn't run
+  if (!dbUser && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const adminSupabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { persistSession: false } }
+    )
+    
+    const { data: insertedUser } = await adminSupabase
+      .from('users')
+      .insert({
+        id: user.id,
+        full_name: user.user_metadata?.full_name ?? 'Player',
+        subscription_status: 'inactive',
+        charity_contribution_percentage: 10
+      })
+      .select()
+      .single();
+      
+    dbUser = insertedUser;
+  }
 
   return { authUser: user, dbUser: dbUser ?? null }
 }
