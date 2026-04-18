@@ -3,74 +3,74 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
+    request: { headers: request.headers },
+  })
+
+  // Skip if Supabase env vars aren't configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseAnonKey) return response
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return request.cookies.get(name)?.value
+      },
+      set(name: string, value: string, options: CookieOptions) {
+        request.cookies.set({ name, value, ...options })
+        response = NextResponse.next({ request: { headers: request.headers } })
+        response.cookies.set({ name, value, ...options })
+      },
+      remove(name: string, options: CookieOptions) {
+        request.cookies.set({ name, value: '', ...options })
+        response = NextResponse.next({ request: { headers: request.headers } })
+        response.cookies.set({ name, value: '', ...options })
+      },
     },
   })
 
-  // Guard: if Supabase env vars aren't configured yet, skip auth checks
-  // and pass through — public pages will still render
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return response
-  }
-
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options })
-          response.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options })
-          response.cookies.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
-
+  // Refresh session — CRITICAL: this keeps the session cookie alive on every request
   let user = null
   try {
     const { data } = await supabase.auth.getUser()
     user = data.user
   } catch {
-    // Auth failure (e.g. invalid key) — fall through to unauthenticated logic
+    // Auth failure — treat as unauthenticated
   }
 
   const { pathname } = request.nextUrl
-
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdminRoute = pathname.startsWith('/admin')
 
-  // Combine protected routes check
+  // ── Protect dashboard + admin routes ──────────────────────
   if (isDashboard || isAdminRoute) {
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
     }
 
-    // Check admin role
-    const isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin'
-    if (isAdminRoute && !isAdmin) {
-      return NextResponse.redirect(new URL('/login', request.url))
+    // Admin role check
+    if (isAdminRoute) {
+      const isAdmin =
+        user.app_metadata?.role === 'admin' ||
+        user.user_metadata?.role === 'admin'
+      if (!isAdmin) {
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
     }
 
-    // Check dashboard subscription explicitly as requested
-    if (isDashboard) {
+    // Subscription check — but only block pages, not API routes
+    // Also skip /dashboard itself so the page can show a proper CTA
+    if (isDashboard && pathname !== '/dashboard') {
       try {
         const { data: dbUser } = await supabase
           .from('users')
           .select('subscription_status')
           .eq('id', user.id)
           .single()
-        
-        if (dbUser?.subscription_status !== 'active') {
+
+        if (dbUser && dbUser.subscription_status !== 'active') {
           return NextResponse.redirect(new URL('/subscribe', request.url))
         }
       } catch {
@@ -79,11 +79,16 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Redirect already-logged-in users away from auth pages ──
+  if (user && (pathname === '/login' || pathname === '/signup')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
   return response
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
