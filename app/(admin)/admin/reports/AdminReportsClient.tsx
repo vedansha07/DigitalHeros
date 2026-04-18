@@ -112,7 +112,7 @@ export default function AdminReportsClient({ users, draws, charities, contributi
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(val:number)=>`£${val.toFixed(2)}`} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
+                                <Tooltip formatter={(val) => `£${Number(val).toFixed(2)}`} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>

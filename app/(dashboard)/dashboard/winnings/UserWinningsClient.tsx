@@ -5,8 +5,8 @@ import { Award, Upload, Loader2, CheckCircle, Clock, XCircle, Trophy, ArrowUpRig
 import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
 
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
-const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 280, damping: 24 } } };
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } } as const;
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 280, damping: 24 } } };
 
 function Marquee({ text }: { text: string }) {
   const items = Array(12).fill(text);

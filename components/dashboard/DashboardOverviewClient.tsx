@@ -9,8 +9,8 @@ import {
 import ScoreEntry from "./ScoreEntry";
 import EmptyState from "@/components/ui/EmptyState";
 
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
-const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 280, damping: 26 } } };
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } } as const;
+const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 280, damping: 26 } } };
 
 function Marquee({ text, dark = false }: { text: string; dark?: boolean }) {
   const repeated = Array(12).fill(text);
